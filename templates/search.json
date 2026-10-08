@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "settings": {"max_verification_age_days": 7},
+  "profile": {"criteria": []},
+  "sources": [],
+  "facts": [],
+  "authorizations": [],
+  "opportunities": [],
+  "actions": [],
+  "coverage": []
+}
