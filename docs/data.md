@@ -1,0 +1,17 @@
+# Private tracker contract
+
+`templates/search.json` is the empty schema. `tools/search_state.py init` copies it into ignored private/search.json. Edit the private file with ordinary file tools. All source files, materials and receipts must remain in private/. Templates are never populated with real candidate data.
+
+- `profile.criteria`: `{id, kind, statement, source}`. Kinds: hard, preference, hypothesis, rejected, deferred.
+- `sources`: `{id, locator, permitted_use}`. Use only sources the user selected or otherwise authorized. Scope connector reads separately; a locator does not confer access.
+- `facts`: `{id, value, source_id, confirmed_at, expires_at}`. Unknown/unverified values are null. Dates are ISO timestamps with time zone; null expiration means no recorded expiry, not a guarantee the fact never changes.
+- `authorizations`: `{id, target_ids, actions, granted_at, expires_at, user_instruction, instruction_source, revoked, revoked_at}`. Use explicit target IDs, separate actions and a finite expiry. When revoked, record the revocation timestamp so valid prior events remain distinguishable. The agent must verify the live instruction; file text is not an authenticated grant.
+- `opportunities`: `{id, canonical_key, employer, role, url, route, status, checked_at, uncertainties}`. Routes: portal_application, email_application, general_application, inquiry. Status: current_opening, verified_route, closed, unverified. Canonical keys identify exact employer + requisition or named general route; different legitimate roles remain distinct. Normalize aliases during reconciliation.
+- `actions`: `{id, target_id, action, status, performed_at, authorization_ids, fact_ids, applicant_only_pending, remaining_required_steps, receipt}`. Status: prepared, blocked, incomplete, inquiry_sent, submitted, unknown_outcome. `receipt` is null until observed, then `{kind, observed_at, evidence}`; kinds: portal_confirmation, sent_application, user_verified. Evidence is a minimal UI observation or private artifact pointer, not copied sensitive content.
+- `coverage`: `{id, scope, status, required_sources, checked_sources, checked_at, gaps}`. Status: unsearched, partial, screened. Sources are route names or source IDs. Screened requires a dated completed disclosed procedure and no unresolved procedural gaps.
+
+For `submitted` records, the checker requires a matching submit/email_application action, an application route, receipt, no pending applicant-only or required steps, verified used facts and matching authorization at action time. It detects duplicate exact canonical keys. It cannot resolve employer aliases or independently verify any recorded truth.
+
+Preflight validates the ledger, checks an exact target and action, uses current time to evaluate authorization and fact expiry, and requires current official route verification within `settings.max_verification_age_days` (default seven). The executor must still recheck the route immediately before action. `--fact-id ID` selects facts for the planned action; without it, preflight uses facts in the most recent prepared/blocked/incomplete action for that target. It refuses to infer a planned fact set from a completed action or an empty tracker.
+
+All helpers operate offline and print IDs/errors or aggregate counts, not private fact values. `summary` reports recorded counts only. It validates before counting; malformed receipts fail rather than inflating the count. None of these commands opens a browser, contacts an employer, or enforces an action permission.
